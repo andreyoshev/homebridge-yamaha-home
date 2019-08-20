@@ -314,12 +314,16 @@ YamahaParty.prototype = {
 
     var powerService = new Service.Switch(this.name);
     powerService.getCharacteristic(Characteristic.On)
-      .on('get', function(callback) {
-        const that = this;
-        this.yamaha.isOn().then(function(result) {
-          callback(null, result);
-        });
-      }.bind(this))
+      .on('get', function(callback, context) {
+          yamaha.isOn().then(
+            function(result) {
+              callback(null, result);
+            },
+            function(error) {
+              callback(error, false);
+            }
+          );
+       })
       .on('set', function(on, callback) {
         if (on) {
           const that = this;
@@ -328,34 +332,34 @@ YamahaParty.prototype = {
           });
         } else {
           this.yamaha.powerOff().then(function() {
-            callback(null, true);
-          });
-        }
-      }.bind(this));
-
-      var partyService = new Service.Switch(this.name);
-		partyService.getCharacteristic(Characteristic.On)
-      .on('get', function(callback) {
-        const that = this;
-        this.yamaha.isPartyModeEnabled().then(function(result) {
-          callback(null, result);
-        });
-      }.bind(this))
-      .on('set', function(on, callback) {
-        if (on) {
-          const that = this;
-          this.yamaha.powerOn().then(function() {
-            that.yamaha.partyModeOn().then(function() {
-              callback(null, true);
-            });
-          });
-        } else {
-          this.yamaha.partyModeOff().then(function() {
             callback(null, false);
           });
         }
       }.bind(this));
-    return [informationService, partyService, powerService];
+
+  //     var partyService = new Service.Switch(this.name);
+		// partyService.getCharacteristic(Characteristic.On)
+  //     .on('get', function(callback) {
+  //       const that = this;
+  //       this.yamaha.isPartyModeEnabled().then(function(result) {
+  //         callback(null, result);
+  //       });
+  //     }.bind(this))
+  //     .on('set', function(on, callback) {
+  //       if (on) {
+  //         const that = this;
+  //         this.yamaha.powerOn().then(function() {
+  //           that.yamaha.partyModeOn().then(function() {
+  //             callback(null, true);
+  //           });
+  //         });
+  //       } else {
+  //         this.yamaha.partyModeOff().then(function() {
+  //           callback(null, false);
+  //         });
+  //       }
+  //     }.bind(this));
+    return [informationService, powerService];
   }
 };
 
