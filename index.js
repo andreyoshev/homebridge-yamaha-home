@@ -315,15 +315,15 @@ YamahaParty.prototype = {
     var powerService = new Service.Switch(this.name);
     powerService.getCharacteristic(Characteristic.On)
       .on('get', function(callback, context) {
-          this.yamaha.isOn().then(
-            function(result) {
-              callback(null, result);
-            },
-            function(error) {
-              callback(error, false);
-            }
-          );
-       })
+        yamaha.isOn().then(
+          function(result) {
+            callback(false, result);
+          }.bind(this),
+          function(error) {
+            callback(error, false);
+          }.bind(this)
+        );
+      }.bind(this))
       .on('set', function(on, callback) {
         if (on) {
           const that = this;
