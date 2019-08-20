@@ -315,7 +315,7 @@ YamahaParty.prototype = {
     var powerService = new Service.Switch(this.name);
     powerService.getCharacteristic(Characteristic.On)
       .on('get', function(callback, context) {
-        yamaha.isOn().then(
+        this.yamaha.isOn().then(
           function(result) {
             callback(false, result);
           }.bind(this),
