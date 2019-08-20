@@ -312,8 +312,29 @@ YamahaParty.prototype = {
       .setCharacteristic(Characteristic.FirmwareRevision, require('./package.json').version)
       .setCharacteristic(Characteristic.SerialNumber, this.sysConfig.YAMAHA_AV.System[0].Config[0].System_ID[0]);
 
-    var partyService = new Service.Switch(this.name);
-    partyService.getCharacteristic(Characteristic.On)
+    var powerService = new Service.Switch(this.name);
+    powerService.getCharacteristic(Characteristic.On)
+      .on('get', function(callback) {
+        const that = this;
+        this.yamaha.isOn().then(function(result) {
+          callback(null, result);
+        });
+      }.bind(this))
+      .on('set', function(on, callback) {
+        if (on) {
+          const that = this;
+          this.yamaha.powerOn().then(function() {
+            callback(null, true);
+          });
+        } else {
+          this.yamaha.powerOff().then(function() {
+            callback(null, true);
+          });
+        }
+      }.bind(this));
+
+      var partyService = new Service.Switch(this.name);
+		partyService.getCharacteristic(Characteristic.On)
       .on('get', function(callback) {
         const that = this;
         this.yamaha.isPartyModeEnabled().then(function(result) {
@@ -334,7 +355,7 @@ YamahaParty.prototype = {
           });
         }
       }.bind(this));
-    return [informationService, partyService];
+    return [informationService, partyService, powerService];
   }
 };
 
