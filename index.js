@@ -377,7 +377,7 @@ YamahaParty.prototype = {
   //         });
   //       }
   //     }.bind(this));
-    return [informationService, powerService];
+    return [informationService, switchService];
   }
 };
 
