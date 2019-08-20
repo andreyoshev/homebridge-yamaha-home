@@ -300,10 +300,32 @@ function YamahaParty(log, config, name, yamaha, sysConfig) {
 
 YamahaParty.prototype = {
 
+  setPlaying: function(playing) {
+    var that = this;
+    var yamaha = this.yamaha;
+
+    if (playing) {
+      return yamaha.powerOn("System").then(function() {
+        if (that.playVolume) return yamaha.setVolumeTo(that.playVolume * 10, that.zone);
+        else return Q();
+      }).then(function() {
+        if (that.setMainInputTo) return yamaha.setMainInputTo(that.setMainInputTo);
+        else return Q();
+      }).then(function() {
+        if (that.setMainInputTo === "AirPlay") return yamaha.SendXMLToReceiver(
+          '<YAMAHA_AV cmd="PUT"><AirPlay><Play_Control><Playback>Play</Playback></Play_Control></AirPlay></YAMAHA_AV>'
+        );
+        else return Q();
+      });
+    } else {
+      return yamaha.powerOff("System");
+    }
+  },
+
   getServices: function() {
     var that = this;
     var informationService = new Service.AccessoryInformation();
-    // var yamaha = this.yamaha;
+    var yamaha = this.yamaha;
 
     informationService
       .setCharacteristic(Characteristic.Name, this.name)
@@ -312,10 +334,11 @@ YamahaParty.prototype = {
       .setCharacteristic(Characteristic.FirmwareRevision, require('./package.json').version)
       .setCharacteristic(Characteristic.SerialNumber, this.sysConfig.YAMAHA_AV.System[0].Config[0].System_ID[0]);
 
-    var powerService = new Service.Switch(this.name);
-    powerService.getCharacteristic(Characteristic.On)
+
+    var switchService = new Service.Switch("Yamaha Power");
+    switchService.getCharacteristic(Characteristic.On)
       .on('get', function(callback, context) {
-        this.yamaha.isOn().then(
+        yamaha.isOn().then(
           function(result) {
             callback(false, result);
           }.bind(this),
@@ -324,17 +347,12 @@ YamahaParty.prototype = {
           }.bind(this)
         );
       }.bind(this))
-      .on('set', function(on, callback) {
-        if (on) {
-          const that = this;
-          this.yamaha.powerOn().then(function() {
-            callback(null, true);
-          });
-        } else {
-          this.yamaha.powerOff().then(function() {
-            callback(null, false);
-          });
-        }
+      .on('set', function(powerOn, callback) {
+        this.setPlaying(powerOn).then(function() {
+          callback(false, powerOn);
+        }, function(error) {
+          callback(error, !powerOn); // TODO: Actually determine and send real new status.
+        });
       }.bind(this));
 
   //     var partyService = new Service.Switch(this.name);
